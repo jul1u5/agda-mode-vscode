@@ -1,0 +1,121 @@
+diff --git a/agda-language-server.cabal b/agda-language-server.cabal
+index c0c682b..7b6cb0d 100644
+--- a/agda-language-server.cabal
++++ b/agda-language-server.cabal
+@@ -63,7 +63,7 @@ library
+       OverloadedStrings
+   ghc-options: -Wincomplete-patterns -Wunused-do-bind -Wunused-foralls -Wwarnings-deprecations -Wwrong-do-bind -Wmissing-fields -Wmissing-methods -Wmissing-pattern-synonym-signatures -Wmissing-signatures -Werror=incomplete-patterns -fno-warn-orphans
+   build-depends:
+-      Agda ==2.6.2.1
++      Agda ==2.6.2.2
+     , aeson
+     , base >=4.7 && <5
+     , bytestring
+@@ -86,7 +86,7 @@ executable als
+       app
+   ghc-options: -Wincomplete-patterns -Wunused-do-bind -Wunused-foralls -Wwarnings-deprecations -Wwrong-do-bind -Wmissing-fields -Wmissing-methods -Wmissing-pattern-synonym-signatures -Wmissing-signatures -threaded -rtsopts -with-rtsopts=-N -Werror=incomplete-patterns -fno-warn-orphans
+   build-depends:
+-      Agda ==2.6.2.1
++      Agda ==2.6.2.2
+     , aeson
+     , agda-language-server
+     , base >=4.7 && <5
+@@ -141,7 +141,7 @@ test-suite als-test
+       OverloadedStrings
+   ghc-options: -Wincomplete-patterns -Wunused-do-bind -Wunused-foralls -Wwarnings-deprecations -Wwrong-do-bind -Wmissing-fields -Wmissing-methods -Wmissing-pattern-synonym-signatures -Wmissing-signatures -threaded -rtsopts -with-rtsopts=-N -Werror=incomplete-patterns -fno-warn-orphans
+   build-depends:
+-      Agda ==2.6.2.1
++      Agda ==2.6.2.2
+     , aeson
+     , base >=4.7 && <5
+     , bytestring
+diff --git a/src/Agda/Convert.hs b/src/Agda/Convert.hs
+index 51c0adb..acbfc38 100644
+--- a/src/Agda/Convert.hs
++++ b/src/Agda/Convert.hs
+@@ -21,6 +21,7 @@ import Agda.Syntax.Position (HasRange (getRange), Range, noRange)
+ import Agda.Syntax.Scope.Base
+ import Agda.TypeChecking.Errors (getAllWarningsOfTCErr, prettyError)
+ import Agda.TypeChecking.Monad hiding (Function)
++import qualified Agda.TypeChecking.Monad as B
+ import Agda.TypeChecking.Pretty (prettyTCM)
+ import qualified Agda.TypeChecking.Pretty as TCP
+ import Agda.TypeChecking.Pretty.Warning (filterTCWarnings, prettyTCWarnings, prettyTCWarnings')
+@@ -32,7 +33,7 @@ import Agda.Utils.Impossible (__IMPOSSIBLE__)
+ import Agda.Utils.Maybe (catMaybes)
+ import Agda.Utils.Null (empty)
+ import Agda.Utils.Pretty hiding (render)
+-import Agda.Utils.RangeMap ( IsBasicRangeMap(toList) ) 
++import Agda.Utils.RangeMap ( IsBasicRangeMap(toList) )
+ import Agda.Utils.String (delimiter)
+ import Agda.Utils.Time (CPUTime)
+ import Agda.VersionCommit (versionWithCommitInfo)
+@@ -129,7 +130,7 @@ fromHighlightingInfo h remove method modFile =
+     indirect = liftIO $ writeToTempFile (BS8.unpack (JSON.encode info))
+ 
+ fromDisplayInfo :: DisplayInfo -> TCM IR.DisplayInfo
+-fromDisplayInfo = \case 
++fromDisplayInfo = \case
+   Info_CompilationOk _ ws -> do
+     -- filter
+     let filteredWarnings = filterTCWarnings (tcWarnings ws)
+@@ -576,12 +577,12 @@ renderResponseContext ii (ResponseContextEntry n x (Arg ai expr) letv nis) = wit
+     -- raw
+     rawExpr <- prettyATop expr
+     let rawType = show $ align 10 [(rawAttribute ++ rawCtxName, ":" <+> rawExpr <+> parenSep extras)]
+-    -- rendered  
++    -- rendered
+     renderedExpr <- renderATop expr
+     let renderedType = (renderedCtxName <> renderedAttribute) Render.<+> ":" Render.<+> renderedExpr Render.<+> parenSep2 extras2
+       -- (Render.fsep $ Render.punctuate "," extras)
+ 
+-    -- result 
++    -- result
+     let typeItem = Unlabeled renderedType (Just rawType) Nothing
+ 
+     valueItem <- case letv of
+diff --git a/src/Agda/Position.hs b/src/Agda/Position.hs
+index 2f21210..21c94df 100644
+--- a/src/Agda/Position.hs
++++ b/src/Agda/Position.hs
+@@ -42,7 +42,7 @@ toAgdaRange table path (LSP.Range start end) = Range
+ toAgdaPositionWithoutFile :: ToOffset -> LSP.Position -> PositionWithoutFile
+ toAgdaPositionWithoutFile table (LSP.Position line col) = Pn
+   ()
+-  (fromIntegral (toOffset table (line, col)) + 1)
++  (fromIntegral (toOffset table (fromIntegral line, fromIntegral col)) + 1)
+   (fromIntegral line + 1)
+   (fromIntegral col + 1)
+ 
+@@ -55,7 +55,7 @@ prettyPositionWithoutFile pos@(Pn () offset _line _col) =
+ 
+ -- Keeps record of offsets of every line break ("\n", "\r" and "\r\n")
+ --
+---  Example text      corresponding entry of IntMap        
++--  Example text      corresponding entry of IntMap
+ --  >abc\n               (1, 4)
+ --  >def123\r\n          (2, 11)
+ --  >ghi\r               (3, 15)
+@@ -97,7 +97,7 @@ toOffset (ToOffset table) (line, col) = case IntMap.lookup line table of
+ -- An IntMap for speeding up Offset => Position convertion
+ -- Keeps record of offsets of every line break ("\n", "\r" and "\r\n")
+ --
+---  Example text      corresponding entry of IntMap        
++--  Example text      corresponding entry of IntMap
+ --  >abc\n               (4, 1)
+ --  >def123\r\n          (11, 2)
+ --  >ghi\r               (15, 3)
+@@ -115,11 +115,11 @@ makeFromOffset = FromOffset . accumResult . Text.foldl'
+   (Accum Nothing 0 0 IntMap.empty)
+  where
+   go :: Accum -> Char -> Accum
+-  -- encountered a "\r\n", update the latest entry 
++  -- encountered a "\r\n", update the latest entry
+   go (Accum (Just '\r') n l table) '\n' = case IntMap.deleteFindMax table of
+     ((offset, lineNo), table') ->
+       Accum (Just '\n') (1 + n) l (IntMap.insert (1 + offset) lineNo table')
+-  -- encountered a line break, add a new entry 
++  -- encountered a line break, add a new entry
+   go (Accum previous n l table) '\n' =
+     Accum (Just '\n') (1 + n) (1 + l) (IntMap.insert (1 + n) (1 + l) table)
+   go (Accum previous n l table) '\r' =

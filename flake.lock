@@ -1,0 +1,60 @@
+{
+  "nodes": {
+    "als-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1644548948,
+        "narHash": "sha256-L/LyI+C2aOhMzteuShACeTo8bujN61Ey9VRgFAkSwYU=",
+        "owner": "banacorn",
+        "repo": "agda-language-server",
+        "rev": "d9525d5f5ab84df7408f68016714eb0e89ff71b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "banacorn",
+        "repo": "agda-language-server",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1663634720,
+        "narHash": "sha256-wMYXWKgysznBUHmvq5fN0uzUTNpnBLREPupM17xP8MY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "998f0f7924198b2460458728de59fe738997f28e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "als-src": "als-src",
+        "nixpkgs": "nixpkgs",
+        "utils": "utils"
+      }
+    },
+    "utils": {
+      "locked": {
+        "lastModified": 1676283394,
+        "narHash": "sha256-XX2f9c3iySLCw54rJ/CZs+ZK6IQy7GXNY4nSOyu2QG4=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "3db36a8b464d0c4532ba1c7dda728f4576d6d073",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
